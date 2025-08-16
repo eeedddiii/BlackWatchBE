@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:11.2
+    container_name: blackwatch-mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: blackwatch
+      MYSQL_USER: blackwatch
+      MYSQL_PASSWORD: blackwatchpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - blackwatch-network
+
+  blackwatch-api:
+    build: .
+    container_name: blackwatch-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/blackwatch
+      SPRING_DATASOURCE_USERNAME: blackwatch
+      SPRING_DATASOURCE_PASSWORD: blackwatchpassword
+      JWT_SECRET: your-very-secure-jwt-secret-key-that-should-be-at-least-256-bits-long
+      SPRING_MAIL_USERNAME: your-email@gmail.com
+      SPRING_MAIL_PASSWORD: your-app-password
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mariadb
+    networks:
+      - blackwatch-network
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:
+
+networks:
+  blackwatch-network:
+    driver: bridge
